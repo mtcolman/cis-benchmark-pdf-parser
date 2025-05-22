@@ -8,6 +8,19 @@ import argparse
 import sys
 import unittest
 
+def clean_pdf_text(text):
+    # Normalize line endings
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # Keep paragraph breaks (double newlines), remove single newlines inside paragraphs
+    text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
+
+    # Optional: collapse multiple spaces
+    text = re.sub(r' +', ' ', text)
+
+    # Optional: trim leading/trailing whitespace
+    return text.strip()
+
 def main():
     defval = ""
     cis = ""
@@ -150,6 +163,7 @@ def main():
                 try:
                     d_post = data.split("Description:", 1)[1]
                     description = d_post.partition("Rationale")[0].strip()
+                    description = clean_pdf_text(description)
                     description_count += 1
                 except IndexError:
                     logger.info("*** Page does not contain Description ***")
@@ -158,6 +172,7 @@ def main():
                 try:
                     rat_post = data.split("Rationale:", 1)[1]
                     rat = rat_post.partition("Audit:")[0].strip()
+                    rat = clean_pdf_text(rat)
                     rat_count += 1
                 except IndexError:
                     logger.info("*** Page does not contain Rationale ***")
@@ -166,6 +181,7 @@ def main():
                 try:
                     a_post = data.split("\nAudit:", 1)[1]
                     audit = a_post.partition("Remediation")[0].strip()
+                    audit = clean_pdf_text(audit)
                     acnt += 1
                 except IndexError:
                     logger.info("*** Page does not contain Audit ***")
