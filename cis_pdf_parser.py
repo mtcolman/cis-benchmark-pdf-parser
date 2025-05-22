@@ -42,6 +42,10 @@ def main():
     # Setup console logging
     logger = logging.getLogger()
     logger.setLevel(logging.INFO) # Change to DEBUG, INFO, WARNING, ERROR, or CRITICAL
+
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
     logging_streamhandler = logging.StreamHandler(stream=None)
     logging_streamhandler.setFormatter(
         logging.Formatter(fmt="%(asctime)s %(levelname)-8s %(message)s")
@@ -68,10 +72,16 @@ def main():
     )
     args = parser.parse_args()
 
+    log_level = getattr(logging, args.log_level.upper(), None)
+    if not isinstance(log_level, int):
+        logger.error(f"Invalid log level: {args.log_level}")
+        sys.exit(1)
+
     try:
-        logger.setLevel(args.log_level)
+        logger.setLevel(log_level)
+        logging_streamhandler.setLevel(log_level)
     except ValueError:
-        logging.error("Invalid log level: {}. Valid log levels can be found here "
+        logger.error("Invalid log level: {}. Valid log levels can be found here "
                       "https://docs.python.org/3/howto/logging.html".format(args.log_level))
         sys.exit(1)
 
@@ -101,7 +111,7 @@ def main():
                 raise ValueError("Could not find a matching regex for {}".format(CISName))
     except IndexError:
         logger.error("*** Could not find CIS Name, exiting. ***")
-        exit()
+        sys.exit(1)
 
     # Skip to actual rules
     for currentPage in range(len(doc)):
@@ -114,9 +124,9 @@ def main():
     # If no "Recommendations" and "Initial Setup" it is not a full CIS Benchmark .pdf file
     if firstPage is None:
         logger.error("*** Not a CIS PDF Benchmark, exiting. ***")
-        exit()
+        sys.exit(1)
 
-    logger.info("*** Total Number of Pages: %i ***", doc.page_count)
+    logger.info(f"*** Total Number of Pages: {doc.page_count} ***")
 
     # Open output .csv file for writing
     with open(args.out_file, mode="w") as cis_outfile:
@@ -140,7 +150,7 @@ def main():
         for page in range(firstPage, len(doc)):
             if page < len(doc):
                 data = doc.load_page(page).get_text("text")
-                logger.info("*** Parsing Page Number: %i ***", page)
+                logger.info(f"*** Parsing Page Number: {page} ***")
 
                 # Get rule by matching regex pattern for x.x.* (Automated) or (Manual), there are no "x.*" we care about
                 try:
@@ -149,9 +159,9 @@ def main():
                         rule = rerule.group()
                         rule_count += 1
                 except IndexError:
-                    logger.debug("*** Page %i does not contain a Rule Name ***")
+                    logger.debug(f"*** Page {page} does not contain a Rule Name ***")
                 except AttributeError:
-                    logger.debug("*** Page %i does not contain a Rule Name ***")
+                    logger.debug(f"*** Page {page} does not contain a Rule Name ***")
 
                 # Get Profile Applicability by splits as it is always between Profile App. and Description, faster than regex
                 try:
@@ -160,7 +170,7 @@ def main():
                     level = re.sub("[^a-zA-Z0-9\\n-]+", " ", level)
                     level_count += 1
                 except IndexError:
-                    logger.debug("*** Page %i does not contain Profile Levels ***")
+                    logger.debug(f"*** Page {page} does not contain Profile Levels ***")
 
                 # Get Description by splits as it is always between Description and Rationale, faster than regex
                 try:
@@ -169,7 +179,7 @@ def main():
                     description = clean_pdf_text(description)
                     description_count += 1
                 except IndexError:
-                    logger.debug("*** Page %i does not contain Description ***")
+                    logger.debug(f"*** Page {page} does not contain Description ***")
 
                 # Get Rationale by splits as it is always between Rationale and Audit, faster than regex
                 try:
@@ -178,7 +188,7 @@ def main():
                     rat = clean_pdf_text(rat)
                     rat_count += 1
                 except IndexError:
-                    logger.debug("*** Page %i does not contain Rationale ***")
+                    logger.debug(f"*** Page {page} does not contain Rationale ***")
 
                 # Get Audit by splits as it is always between Audit and Remediation, faster than regex
                 try:
@@ -187,7 +197,7 @@ def main():
                     audit = clean_pdf_text(audit)
                     acnt += 1
                 except IndexError:
-                    logger.debug("*** Page %i does not contain Audit ***")
+                    logger.debug(f"*** Page {page} does not contain Audit ***")
 
                 # Get Remediation by splits as it is always between Remediation and Default value, faster than regex
                 try:
@@ -195,7 +205,7 @@ def main():
                     rem = rem_post.partition("Default Value:")[0].strip()
                     rem_count += 1
                 except IndexError:
-                    logger.debug("*** Page %i does not contain Remediation ***")
+                    logger.debug(f"*** Page {page} does not contain Remediation ***")
 
                 # Get Default Value by splits as WHEN PRESENT it is always between Default Value and CIS Controls,
                 # Faster than regex
@@ -205,7 +215,7 @@ def main():
                     defval = defval_post.partition("CIS Controls:")[0].strip()
                     defval_count += 1
                 except IndexError:
-                    logger.debug("*** Page %i does not contain Default Value ***")
+                    logger.debug(f"*** Page {page} does not contain Default Value ***")
 
                 # Get CIS Controls by splits as they are always between CIS Controls and P a g e, regex the result
                 try:
@@ -218,7 +228,7 @@ def main():
                         defval = ""
                         defval_count += 1
                 except IndexError:
-                    logger.debug("*** Page %i does not contain CIS Controls ***")
+                    logger.debug(f"*** Page {page} does not contain CIS Controls ***")
 
                 # We only write to csv if a parsed rule is fully assembled
                 if rule_count:
@@ -232,7 +242,7 @@ def main():
                         #defval_count,
                         #cis_count,
                     ]
-                    logging.debug(row_count)
+                    logger.debug(row_count)
                     if row_count.count(row_count[0]) == len(row_count):
                         # Have we seen this rule before? If not, write it to file
                         if row_count not in seenList:
@@ -244,7 +254,7 @@ def main():
                 page += 1
             else:
                 logger.info("*** All pages parsed, exiting. ***")
-                exit()
+                sys.exit()
 
 
 # Setup command line arguments
