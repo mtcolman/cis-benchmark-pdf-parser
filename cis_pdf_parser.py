@@ -9,6 +9,9 @@ import sys
 import unittest
 
 def main():
+    defval = ""
+    cis = ""
+    
     # Initialize variables
     (
         rule_count,
@@ -37,10 +40,10 @@ def main():
     )
     required = parser.add_argument_group("required arguments")
     required.add_argument(
-        "--pdf_file", type=str, required=True, help="PDF File to parse"
+        "-p", "--pdf_file", type=str, required=True, help="PDF File to parse"
     )
     required.add_argument(
-        "--out_file", type=str, required=True, help="Output file in .csv format"
+        "-o", "--out_file", type=str, required=True, help="Output file in .csv format"
     )
     required.add_argument(
         '-l', '--log-level', type=str, required=False, help="Set log level (DEBUG, INFO, etc). Default to INFO",
@@ -59,13 +62,14 @@ def main():
     doc = fitz.open(args.pdf_file)
 
     # Get CIS Type from the name of the document in the cover page as it doesn't appear in the metadata
-    coverPageText = doc.loadPage(0).get_text("text")
+    coverPageText = doc.load_page(0).get_text("text")
     logger.debug(coverPageText)
     try:
         pattern = "(?<=CIS).*(?=Benchmark)"
         rerule = re.search(pattern, coverPageText, re.DOTALL)
         if rerule is not None:
             CISName = rerule.group(0).strip().replace('\n','')
+            print(f"CISName is: {CISName}")
             logger.info("*** Document found name: {} ***".format(CISName))
             if "Red Hat Enterprise Linux 7" in CISName:
                 pattern = "(\d+(?:\.\d.\d*)+)(.*?)(\(Automated\)|\(Manual\))"
@@ -75,6 +79,8 @@ def main():
                 pattern = "(\d+(?:\.\d+)+)\s\(((L[12])|(NG))\)(.*?)(\(Automated\)|\(Manual\))"
             elif "Microsoft Windows 10 Enterprise" in CISName:
                 pattern = "(\d+(?:\.\d+)+)\s\(((L[12])|(NG)|(BL))\)(.*?)(\(Automated\)|\(Manual\))"
+            elif "Amazon Web Services Foundations" in CISName:
+                pattern = "(\d+(?:\.\d.\d*)+)(.*?)(\(Automated\)|\(Manual\))"
             else:
                 raise ValueError("Could not find a matching regex for {}".format(CISName))
     except IndexError:
@@ -83,10 +89,10 @@ def main():
 
     # Skip to actual rules
     for currentPage in range(len(doc)):
-        findPage = doc.loadPage(currentPage)
+        findPage = doc.load_page(currentPage)
         # logger.debug("Page number : {}".format(currentPage.__index__()))
         # logger.debug(findPage.get_text())
-        if findPage.searchFor("Recommendations 1 "):
+        if findPage.search_for("Recommendations 1 "):
             firstPage = currentPage
 
     # If no "Recommendations" and "Initial Setup" it is not a full CIS Benchmark .pdf file
@@ -94,7 +100,7 @@ def main():
         logger.error("*** Not a CIS PDF Benchmark, exiting. ***")
         exit()
 
-    logger.info("*** Total Number of Pages: %i ***", doc.pageCount)
+    logger.info("*** Total Number of Pages: %i ***", doc.page_count)
 
     # Open output .csv file for writing
     with open(args.out_file, mode="w") as cis_outfile:
@@ -117,7 +123,7 @@ def main():
         # Loop through all PDF pages
         for page in range(firstPage, len(doc)):
             if page < len(doc):
-                data = doc.loadPage(page).getText("text")
+                data = doc.load_page(page).get_text("text")
                 logger.info("*** Parsing Page Number: %i ***", page)
 
                 # Get rule by matching regex pattern for x.x.* (Automated) or (Manual), there are no "x.*" we care about
