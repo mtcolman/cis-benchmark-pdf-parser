@@ -14,25 +14,36 @@ This parser can be useful for the following use cases:
 
 cis_pdf_parser.py is dependent upon python3, the fitz, csv, re, logging, and argparse modules, and the script expects a path to a CIS Benchmark .pdf file and a filename to output to.
 
+If you wish to run inside a virtual python environment:
+```
+# cd /path/to/repo/root
+python -m venv .venv
+source .venv/bin/activate
+```
+
 Run the following:
 ```
+# cd /path/to/repo/root
 $ pip install -r requirements.txt
 ```
 
 ## Usage
 
 ```
-$ python3 cis_pdf_parser.py --help
-usage: cis_pdf_parser.py [-h] --pdf_file PDF_FILE --out_file OUT_FILE [-l LOG_LEVEL]
+# cd /path/to/repo/root
+$ python3 cis_pdf_parser.py -h
+usage: cis_pdf_parser.py [-h] -p PDF_FILE -o OUT_FILE [-l LOG_LEVEL]
 
 Parses CIS Benchmark PDF content into CSV Format
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
 
 required arguments:
-  --pdf_file PDF_FILE   PDF File to parse
-  --out_file OUT_FILE   Output file in .csv format
+  -p PDF_FILE, --pdf_file PDF_FILE
+                        PDF File to parse
+  -o OUT_FILE, --out_file OUT_FILE
+                        Output file in .csv format
   -l LOG_LEVEL, --log-level LOG_LEVEL
                         Set log level (DEBUG, INFO, etc). Default to INFO
 ```
@@ -40,7 +51,7 @@ required arguments:
 ## Full Command Example:
 
 ```
-$ python3 cis_pdf_parser.py --pdf_file CIS_Red_Hat_Enterprise_Linux_7_Benchmark_v3.1.1.pdf --out_file rhel_7_controls.csv
+$ python3 cis_pdf_parser.py -p CIS_Red_Hat_Enterprise_Linux_7_Benchmark_v3.1.1.pdf -o rhel_7_controls.csv
 ```
 
 ## Output
@@ -58,6 +69,7 @@ Rule, Profile Applicability, Description, Rationale, Audit, Remediation, CIS Con
 * CIS_Oracle_Linux_7_Benchmark_v3.1.1
 * CIS_Red_Hat_Enterprise_Linux_8_Benchmark_v1.0.1
 * CIS_Red_Hat_Enterprise_Linux_7_Benchmark_v3.1.1
+* CIS_Amazon_Web_Services_Foundations_Benchmark_v5.0.0
 
 You will need provide a copy of or download the latest CIS Benchmark files from the [Center for Internet Security](https://learn.cisecurity.org/benchmarks).
 
