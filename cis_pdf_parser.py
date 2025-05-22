@@ -41,11 +41,15 @@ def main():
 
     # Setup console logging
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.INFO) # Change to DEBUG, INFO, WARNING, ERROR, or CRITICAL
     logging_streamhandler = logging.StreamHandler(stream=None)
     logging_streamhandler.setFormatter(
         logging.Formatter(fmt="%(asctime)s %(levelname)-8s %(message)s")
     )
+    
+    # Set handler's level to match (important!)
+    logging_streamhandler.setLevel(logging.INFO) # Change to DEBUG, INFO, WARNING, ERROR, or CRITICAL
+    
     logger.addHandler(logging_streamhandler)
 
     parser = argparse.ArgumentParser(
@@ -82,7 +86,6 @@ def main():
         rerule = re.search(pattern, coverPageText, re.DOTALL)
         if rerule is not None:
             CISName = rerule.group(0).strip().replace('\n','')
-            print(f"CISName is: {CISName}")
             logger.info("*** Document found name: {} ***".format(CISName))
             if "Red Hat Enterprise Linux 7" in CISName:
                 pattern = "(\d+(?:\.\d.\d*)+)(.*?)(\(Automated\)|\(Manual\))"
@@ -146,9 +149,9 @@ def main():
                         rule = rerule.group()
                         rule_count += 1
                 except IndexError:
-                    logger.info("*** Page does not contain a Rule Name ***")
+                    logger.debug("*** Page %i does not contain a Rule Name ***")
                 except AttributeError:
-                    logger.info("*** Page does not contain a Rule Name ***")
+                    logger.debug("*** Page %i does not contain a Rule Name ***")
 
                 # Get Profile Applicability by splits as it is always between Profile App. and Description, faster than regex
                 try:
@@ -157,7 +160,7 @@ def main():
                     level = re.sub("[^a-zA-Z0-9\\n-]+", " ", level)
                     level_count += 1
                 except IndexError:
-                    logger.info("*** Page does not contain Profile Levels ***")
+                    logger.debug("*** Page %i does not contain Profile Levels ***")
 
                 # Get Description by splits as it is always between Description and Rationale, faster than regex
                 try:
@@ -166,7 +169,7 @@ def main():
                     description = clean_pdf_text(description)
                     description_count += 1
                 except IndexError:
-                    logger.info("*** Page does not contain Description ***")
+                    logger.debug("*** Page %i does not contain Description ***")
 
                 # Get Rationale by splits as it is always between Rationale and Audit, faster than regex
                 try:
@@ -175,7 +178,7 @@ def main():
                     rat = clean_pdf_text(rat)
                     rat_count += 1
                 except IndexError:
-                    logger.info("*** Page does not contain Rationale ***")
+                    logger.debug("*** Page %i does not contain Rationale ***")
 
                 # Get Audit by splits as it is always between Audit and Remediation, faster than regex
                 try:
@@ -184,7 +187,7 @@ def main():
                     audit = clean_pdf_text(audit)
                     acnt += 1
                 except IndexError:
-                    logger.info("*** Page does not contain Audit ***")
+                    logger.debug("*** Page %i does not contain Audit ***")
 
                 # Get Remediation by splits as it is always between Remediation and Default value, faster than regex
                 try:
@@ -192,7 +195,7 @@ def main():
                     rem = rem_post.partition("Default Value:")[0].strip()
                     rem_count += 1
                 except IndexError:
-                    logger.info("*** Page does not contain Remediation ***")
+                    logger.debug("*** Page %i does not contain Remediation ***")
 
                 # Get Default Value by splits as WHEN PRESENT it is always between Default Value and CIS Controls,
                 # Faster than regex
@@ -202,7 +205,7 @@ def main():
                     defval = defval_post.partition("CIS Controls:")[0].strip()
                     defval_count += 1
                 except IndexError:
-                    logger.info("*** Page does not contain Default Value ***")
+                    logger.debug("*** Page %i does not contain Default Value ***")
 
                 # Get CIS Controls by splits as they are always between CIS Controls and P a g e, regex the result
                 try:
@@ -215,7 +218,7 @@ def main():
                         defval = ""
                         defval_count += 1
                 except IndexError:
-                    logger.info("*** Page does not contain CIS Controls ***")
+                    logger.debug("*** Page %i does not contain CIS Controls ***")
 
                 # We only write to csv if a parsed rule is fully assembled
                 if rule_count:
@@ -234,9 +237,9 @@ def main():
                         # Have we seen this rule before? If not, write it to file
                         if row_count not in seenList:
                             seenList = [row_count]
-                            logger.info("*** Writing the following rule to csv: ***")
+                            logger.debug("*** Writing the following rule to csv: ***")
                             row = [rule, level, description, rat, audit, rem, defval, cis]
-                            logger.info(row)
+                            logger.debug(row)
                             rule_writer.writerow(row)
                 page += 1
             else:
