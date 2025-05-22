@@ -107,6 +107,8 @@ def main():
                 pattern = "(\d+(?:\.\d+)+)\s\(((L[12])|(NG)|(BL))\)(.*?)(\(Automated\)|\(Manual\))"
             elif "Amazon Web Services Foundations" in CISName:
                 pattern = "(\d+(?:\.\d.\d*)+)(.*?)(\(Automated\)|\(Manual\))"
+            elif "Microsoft Azure Foundations" in CISName:
+                pattern = "(\d+(?:\.\d.\d*)+)(.*?)(\(Automated\)|\(Manual\))"
             else:
                 raise ValueError("Could not find a matching regex for {}".format(CISName))
     except IndexError:
